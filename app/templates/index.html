@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
+
+{% block content %}
+    <h1>{{ _('Hi, %(username)s!', username=current_user.username) }}</h1>
+    {% if form %}
+    {{ wtf.quick_form(form) }}
+    {% endif %}
+    {% for companion in companions %}
+    <p>
+    {{ companion.creator.username }} {{ _('has a companion named: ') }}<b>{{ companion.companion_name }}</b>
+    </p>
+    {% endfor %}
+{% endblock %}
