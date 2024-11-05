@@ -1,13 +1,14 @@
 from datetime import datetime, timezone
-from time import time
-import jwt
-from typing import Optional
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
 from hashlib import md5
+from time import time
+from typing import Optional
 import sqlalchemy as sa
 import sqlalchemy.orm as so
-from app import db, login, app
+from flask import current_app
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+from app import db, login
 
 class User(UserMixin, db.Model):
 	#so.Mapped[type] makes fields required unless the Optional key is present!
