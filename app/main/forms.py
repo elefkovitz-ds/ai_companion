@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask import request
 from wtforms import StringField, SubmitField, TextAreaField, RadioField
 from wtforms.validators import ValidationError, DataRequired, Length
 import sqlalchemy as sa
@@ -33,3 +34,13 @@ class CreateCompanionForm(FlaskForm):
     realism = RadioField(_l('Real or Animated'), choices=['Realistic', 'Anime', 'AI-generated'], validators=[DataRequired()])
     companion_name = TextAreaField(_l('Name Your Companion:'), validators=[DataRequired(), Length(min=1, max=40)])
     submit = SubmitField(_l('Submit'))
+
+class SearchForm(FlaskForm):
+    q = StringField(_l('Search'), validators=[DataRequired()])
+
+    def __init__(self, *args, **kwargs):
+        if 'formdata' not in kwargs:
+            kwargs['formdata'] = request.args
+        if 'meta' not in kwargs:
+            kwargs['meta'] = {'csrf': False}
+        super(SearchForm, self).__init__(*args, **kwargs)
