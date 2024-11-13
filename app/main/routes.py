@@ -29,12 +29,14 @@ def index():
     if form.validate_on_submit():
         # This code technically works, but there's nothing for it to search for.
         # It searches for message in the form, but the CreateCompanionForm doesn't have a field called "message" so it errors out
-        # This isn't necessarily a "bug", more so that I just haven't built the features/structure that make it work. But it should!
+        # This isn't necessarily a "bug", more so that I just haven't built the features/structure that make it work. But it should when it's time!
         #try:
         #    language = detect(form.message.data)
         #except LangDetectException:
         #    language = ''
-        companion = Companion(gender=form.gender.data, realism=form.realism.data, companion_name=form.companion_name.data, creator=current_user, language=language)
+        companion = Companion(gender=form.gender.data, realism=form.realism.data, companion_name=form.companion_name.data, creator=current_user)
+        #we ain't done this yet
+        #, language=language)
         db.session.add(companion)
         db.session.commit()
         flash(_('Your new AI Companion has been created!'))
@@ -48,6 +50,14 @@ def user(username):
     user = db.first_or_404(sa.select(User).where(User.username == username))
     form = EmptyForm()
     return render_template('user.html', user=user, form=form)
+
+@bp.route('/user/<username>/popup')
+@login_required
+def user_popup(username):
+    user = db.first_or_404(sa.select(User).where(User.username == username))
+    companions = db.session.scalars(sa.select(Companion).join(User.companions).where(User.username == username).order_by(Companion.created_at_ts)).all()
+    form = EmptyForm()
+    return render_template('user_popup.html', user=user, form=form, companions=companions)
 
 @bp.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
