@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from hashlib import md5
+import json
 from time import time
 from typing import Optional
 import sqlalchemy as sa
@@ -66,9 +67,18 @@ class User(UserMixin, db.Model):
 	#user_tz: so.Mapped[Optional[datetime]] = so.mapped_column(default=lambda: timezone.utc)
 	#last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(default=lambda: datetime.now(user_tz))
 	last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(default=lambda: datetime.now(timezone.utc))
+	last_message_read_time: so.Mapped[Optional[datetime]]
 
 	companions: so.WriteOnlyMapped['Companion'] = so.relationship(back_populates='creator')
 	messages: so.WriteOnlyMapped['Message'] = so.relationship(back_populates='author')
+
+	messages_sent: so.WriteOnlyMapped['Message'] = so.relationship(
+        foreign_keys='Message.sender_id', back_populates='author')
+	messages_received: so.WriteOnlyMapped['Message'] = so.relationship(
+        foreign_keys='Message.recipient_id', back_populates='recipient')
+	notifications: so.WriteOnlyMapped['Notification'] = so.relationship(
+        back_populates='user')
+
 
 	def __repr__(self):
 		return '<User {0}'.format(self.username)
@@ -95,6 +105,25 @@ class User(UserMixin, db.Model):
 			return
 		return db.session.get(User, id)
 
+	def unread_message_count(self):
+		last_read_time = self.last_message_read_time or datetime(1900, 1, 1)
+		query = sa.select(Message).where(Message.recipient == self,
+                                         Message.timestamp > last_read_time)
+		return db.session.scalar(sa.select(sa.func.count()).select_from(
+            query.subquery()))
+
+	def add_notification(self, name, data):
+		db.session.execute(self.notifications.delete().where(
+            Notification.name == name))
+		n = Notification(name=name, payload_json=json.dumps(data), user=self)
+		db.session.add(n)
+		return n
+
+
+@login.user_loader
+def load_user(id):
+	return db.session.get(User, int(id))
+
 class Companion(db.Model):
 	#need to add many more of these companion details later!
 	#probably need a full list of all of their details as mentioned in the ipynb
@@ -116,15 +145,33 @@ class Message(SearchableMixin, db.Model):
 	body: so.Mapped[str] = so.mapped_column(sa.String(140))
 	timestamp: so.Mapped[datetime] = so.mapped_column(
         index=True, default=lambda: datetime.now(timezone.utc))
-	user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
+	sender_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
+                                               index=True)
+	recipient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
                                                index=True)
 	language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
 
-	author: so.Mapped[User] = so.relationship(back_populates='messages')
+	
+	author: so.Mapped[User] = so.relationship(
+		foreign_keys='Message.sender_id',
+		back_populates='messages_sent')
+	recipient: so.Mapped[User] = so.relationship(
+		foreign_keys='Message.recipient_id',
+		back_populates='messages_received')
 
 	def __repr__(self):
 		return '<Message {}>'.format(self.body)
 
-@login.user_loader
-def load_user(id):
-	return db.session.get(User, int(id))
+class Notification(db.Model):
+	id: so.Mapped[int] = so.mapped_column(primary_key=True)
+	name: so.Mapped[str] = so.mapped_column(sa.String(128), index=True)
+	user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
+	                                           index=True)
+	timestamp: so.Mapped[float] = so.mapped_column(index=True, default=time)
+	payload_json: so.Mapped[str] = so.mapped_column(sa.Text)
+
+	user: so.Mapped[User] = so.relationship(back_populates='notifications')
+
+	def get_data(self):
+		return json.loads(str(self.payload_json))
+
