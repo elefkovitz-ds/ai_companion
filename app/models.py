@@ -216,3 +216,9 @@ class Task(db.Model):
     def get_progress(self):
         job = self.get_rq_job()
         return job.meta.get('progress', 0) if job is not None else 100
+
+class MaxRuntimeException(Exception):
+    def __init__(self, message):
+        self.message = message
+    def __str__(self):
+        return self.message

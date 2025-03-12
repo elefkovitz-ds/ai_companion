@@ -21,5 +21,6 @@ class Config:
 	MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
 	ADMINS = os.environ.get('ADMINS')
 
+	LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT')
 	ITEMS_PER_PAGE = 20
 	LANGUAGES = ['en', 'es']
