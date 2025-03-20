@@ -30,6 +30,9 @@
                 {% if user == current_user %}
                 <p><a href="{{ url_for('main.export_companions') }}">{{ _('Export companion list') }}</a></p>
                 {% endif %}
+                {% if user == current_user %}
+                <p style="color:red"><a href="{{ url_for('auth.delete_account') }}">{{ _('Delete Account') }}</a></p>
+                {% endif %}
             </td>
         </tr>
     </table>
