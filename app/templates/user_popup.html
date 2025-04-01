@@ -1,0 +1,24 @@
+<div>
+  <img src="{{ user.avatar(64) }}" style="margin: 5px; float: left">
+  <a href="{{ url_for('main.user', username=user.username) }}">
+    {{ user.username }}
+  </a>
+  {% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
+  <div class="clearfix"></div>
+  {% if user.last_seen %}
+  <p>{{ _('Last seen on') }}: {{ moment(user.last_seen).format('lll') }}</p>
+  {% endif %}
+
+  {% if user != current_user %}
+  <p>{{ user.username }} {{ _('has the following companions:') }}</p>
+  {% if companions %}
+  <ol>
+  {% for companion in companions %}
+    <li><b>{{ companion.companion_name }}</b> - {{ _('created at:') }} {{ moment(companion.created_at_ts).format('lll') }}</li>
+  {% endfor %}
+  </ol>
+  {% else %}
+  {{ user.username }} {{ _('has not created any companions yet') }}
+  {% endif %}
+  {% endif %}
+</div>

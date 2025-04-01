@@ -5,7 +5,16 @@
         <tr>
             <td width="256px"><img src="{{ user.avatar(256) }}"></td>
             <td>
-                <h1>{{ _('User') }}: {{ user.username }}</h1>
+                {% set user_link %}
+                <a class="user_popup" href="{{ url_for('main.user', username=user.username) }}">
+                <h1>{{ user.username }}</h1>
+                </a>
+                {% endset %}
+                {{ _('%(username)s info:',
+                    username=user_link) }}
+                <br>
+                <span id="user{{ user.id }}">{{ user.username }}</span>
+                
                 {% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
                 {% if user.last_seen %}
                 <p>{{ _('Last seen on') }}: {{ moment(user.last_seen).format('LLL') }}</p>
@@ -16,9 +25,12 @@
             </td>
         </tr>
     </table>
+    
     <hr>
+    {% if companions %}
     {% for companion in companions %}
     <p>
     {{ companion.creator.username }} {{ _('has a companion named:') }}<b> {{ companion.companion_name }} </b>who was created {{ moment(companion.created_at_ts).fromNow() }}
     {% endfor %}
+    {% endif %}
 {% endblock %}
