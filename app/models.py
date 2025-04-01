@@ -70,7 +70,7 @@ class User(UserMixin, db.Model):
 	last_message_read_time: so.Mapped[Optional[datetime]]
 
 	companions: so.WriteOnlyMapped['Companion'] = so.relationship(back_populates='creator')
-	messages: so.WriteOnlyMapped['Message'] = so.relationship(back_populates='author')
+	#messages: so.WriteOnlyMapped['Message'] = so.relationship(back_populates='author')
 
 	messages_sent: so.WriteOnlyMapped['Message'] = so.relationship(
         foreign_keys='Message.sender_id', back_populates='author')
@@ -94,12 +94,12 @@ class User(UserMixin, db.Model):
 		return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
 
 	def get_reset_password_token(self, expires_in=900):
-		return jwt.encode({'reset_password': self.id, 'exp': time() + expires_in}, app.config['SECRET_KEY'], algorithm='HS256')
+		return jwt.encode({'reset_password': self.id, 'exp': time() + expires_in}, current_app.config['SECRET_KEY'], algorithm='HS256')
 
 	@staticmethod
 	def verify_reset_password_token(token):
 		try:
-			id = jwt.decode(token, app.config['SECRET_KEY'],
+			id = jwt.decode(token, current_app.config['SECRET_KEY'],
 				algorithms=['HS256'])['reset_password']
 		except:
 			return

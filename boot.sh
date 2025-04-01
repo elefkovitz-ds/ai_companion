@@ -1,6 +1,7 @@
 #!/bin/bash
 
-#kill db connection attempts after 1min, just in case
+# this script is used to boot a Docker container
+# kill db connection attempts after 1min, just in case
 MAX_ATTEMPTS=12
 attempt=1
 
