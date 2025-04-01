@@ -8,8 +8,8 @@ from langdetect import detect, LangDetectException
 from app import db
 from app.main.forms import EditProfileForm, EmptyForm, CreateCompanionForm, SearchForm, MessageForm
 from app.models import User, Companion, Message, Notification
-#we havent built this one yet (no free translate API sadge)
-#from app.translate import translate
+# we havent built this one yet (no free translate API sadge)
+# from app.translate import translate
 from app.main import bp
 
 @bp.before_app_request
@@ -124,9 +124,17 @@ def notifications():
         'timestamp': n.timestamp
     } for n in notifications]
 
+@bp.route('/export_companions')
+@login_required
+def export_companions():
+    if current_user.get_task_in_progress('export_companions'):
+        flash(_('An export task is currently in progress, please try again later.'))
+    else:
+        current_user.launch_task('export_companions', _('Exporting companion list...'))
+        db.session.commit()
+    return redirect(url_for('main.user', username=current_user.username))
 
-
-#currently not implemented!
+# currently not implemented! It costs money
 @bp.route('/translate', methods=['POST'])
 @login_required
 def translate_text():
@@ -135,7 +143,7 @@ def translate_text():
                               data['source_language'],
                               data['dest_language'])}
 
-#functionality technically exists, but there is no destination for this to search!
+# functionality technically exists, but there is no destination for this to search!
 @bp.route('/search')
 @login_required
 def search():

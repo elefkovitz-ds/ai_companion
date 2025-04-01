@@ -10,6 +10,8 @@ class Config:
 	SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
 		'sqlite:///' + os.path.join(basedir, 'app.db')
 	
+	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
+
 	ELASTICSEARCH_URL = os.environ.get('ELASTICSEARCH_URL')
 
 	MAIL_SERVER = os.environ.get('MAIL_SERVER')

@@ -36,6 +36,8 @@ PyJWT==2.8.0
 PyMySQL==1.1.1
 python-dotenv==0.21.1
 pytz==2024.1
+redis==5.2.1
+rq==2.1.0
 six==1.16.0
 SQLAlchemy==2.0.30
 typing_extensions==4.7.1

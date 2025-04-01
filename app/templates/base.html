@@ -62,6 +62,21 @@
       </div>
     </nav>
     <div class="container mt-3">
+      {% if current_user.is_authenticated %}
+      {% with tasks = current_user.get_tasks_in_progress() %}
+      {% if tasks %}
+        {% for task in tasks %}
+        <div class="alert alert-success" role="alert">
+          {{ task.description }}
+          <span id="{{ task.id }}-progress">{{ task.get_progress() }}</span>%
+        </div>
+        {% endfor %}
+      {% endif %}
+      {% endwith %}
+      {% endif %}
+
+
+    <div class="container mt-3">
       {% with messages = get_flashed_messages() %}
       {% if messages %}
         {% for message in messages %}
@@ -115,6 +130,13 @@
         count.innerText = n;
         count.style.visibility = n ? 'visible' : 'hidden';
       }
+
+    function set_task_progress(task_id, progress) {
+        const progressElement = document.getElementById(task_id + '-progress');
+        if (progressElement) {
+          progressElement.innerText = progress;
+        }
+      }  
 
       {% if current_user.is_authenticated %}
       function initialize_notifications() {
