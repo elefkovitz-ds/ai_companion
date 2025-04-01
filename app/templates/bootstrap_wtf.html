@@ -45,7 +45,7 @@
 {% endmacro %}
 
 {% macro quick_form(form, action="", method="post", id="", novalidate=False) %}
-<form novalidate
+<form
   {%- if action != None %} action="{{ action }}"{% endif -%}
   {%- if method %} method="{{ method }}"{% endif %}
   {%- if id %} id="{{ id }}"{% endif -%}
