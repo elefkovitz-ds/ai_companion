@@ -12,11 +12,31 @@ from elasticsearch import Elasticsearch
 from config import Config
 from redis import Redis
 import rq
+from sqlalchemy import MetaData
 
 def get_locale():
 	return request.accept_languages.best_match(current_app.config['LANGUAGES'])
 
-db = SQLAlchemy()
+# this metadata stuff should probably be somewhere else, supposedly in an extensions.py file
+# but we'll do that later it works fine here for now.
+def auto_constraint_name(constraint, table):
+    if constraint.name is None or constraint.name == "_unnamed_":
+        return "sa_autoname_%s" % str(uuid.uuid4())[0:5]
+    else:
+        return constraint.name
+
+metadata = MetaData(
+    naming_convention={
+    "auto_constraint_name": auto_constraint_name,
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+    }
+)
+
+db=SQLAlchemy(metadata=metadata)
 migrate = Migrate()
 login = LoginManager()
 login.login_view = 'auth.login'
@@ -30,7 +50,7 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     db.init_app(app)
-    migrate.init_app(app, db, render_as_batch=True)
+    migrate.init_app(app, db, render_as_batch=True, compare_type=True)
     login.init_app(app)
     mail.init_app(app)
     moment.init_app(app)

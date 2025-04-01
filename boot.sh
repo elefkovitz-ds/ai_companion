@@ -13,6 +13,7 @@ while [ $attempt -le $MAX_ATTEMPTS ]; do
     if [[ $attempt -eq $MAX_ATTEMPTS ]]; then
     	echo "Upgrade command failed on attempt #$attempt, this is the last attempt to start the DB. 
     	Something is wrong with DB initialization, please check your setup and try again."
+        break
     else
     	echo "Upgrade command failed on attempt #$attempt, retrying in 5 secs..."
     	attempt=$((attempt+1))

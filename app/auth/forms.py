@@ -35,6 +35,9 @@ class RegistrationForm(FlaskForm):
         if user is not None:
             raise ValidationError(_('Please use a different email address.'))
 
+class DeleteAccountForm(FlaskForm):
+    confirmation = BooleanField(_l('I understand that I cannot recover my account after choosing to delete it.'), validators=[DataRequired()])
+    submit = SubmitField(_l('Delete Account'))
 
 class ResetPasswordRequestForm(FlaskForm):
     email = StringField(_l('Email'), validators=[DataRequired(), Email()])

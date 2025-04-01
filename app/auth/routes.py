@@ -1,12 +1,12 @@
 from flask import render_template, redirect, url_for, flash, request
 from urllib.parse import urlsplit
-from flask_login import login_user, logout_user, current_user
+from flask_login import login_user, logout_user, current_user, login_required
 from flask_babel import _, get_locale
 import sqlalchemy as sa
 from langdetect import detect, LangDetectException
 from app import db
 from app.auth import bp
-from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
+from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm, DeleteAccountForm
 from app.models import User
 from app.auth.email import send_password_reset_email
 from datetime import datetime, timezone
@@ -55,7 +55,6 @@ def register():
     return render_template('auth/register.html', title=_('Register'),
                            form=form)
 
-
 @bp.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():
     if current_user.is_authenticated:
@@ -87,3 +86,17 @@ def reset_password(token):
         flash(_('Your password has been reset.'))
         return redirect(url_for('auth.login'))
     return render_template('auth/reset_password.html', form=form)
+
+
+@bp.route('/delete_account', methods=['GET', 'POST'])
+@login_required
+def delete_account():
+    form = DeleteAccountForm()
+    if form.validate_on_submit():
+        user = db.first_or_404(sa.select(User).where(User.id == current_user.id))
+        db.session.delete(user)
+        db.session.commit()
+        flash(_('You have successfully deleted your account.'))
+        return redirect(url_for('auth.login'))
+    return render_template('auth/delete_account.html', title=_('Delete Account'),
+                           form=form)
