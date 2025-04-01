@@ -13,5 +13,7 @@ ENV FLASK_APP=ai_companion.py
 # We haven't set up translation services yet
 # RUN flask translate compile
 
+RUN apt-get update && apt-get install -y nmap vim
+
 EXPOSE 5000
 ENTRYPOINT ["./boot.sh"]

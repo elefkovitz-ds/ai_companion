@@ -1,29 +1,20 @@
-from rq import get_current_job
-from app import create_app, db
-from app.models import Task
-from app.email import send_email
 import time
 import sys
 import json
+import sqlalchemy as sa
 from flask import render_template
-
+from rq import get_current_job
+from app import create_app, db
+from app.models import User, Companion, Task
+from app.email import send_email
+from datetime import datetime
 
 app = create_app()
 app.app_context().push()
 
-def example(seconds):
-    job = get_current_job()
-    print('Starting task')
-    for i in range(seconds):
-        job.meta['progress'] = 100.0 * i / seconds
-        job.save_meta()
-        print(i)
-        time.sleep(1)
-    job.meta['progress'] = 100
-    job.save_meta()
-    print('Task completed')
-
 def _set_task_progress(progress):
+    current_app.logger.info('Setting task progress...')
+    app.logger.info('Setting task progress...')
     job = get_current_job()
     if job:
         job.meta['progress'] = progress
@@ -34,17 +25,24 @@ def _set_task_progress(progress):
         if progress >= 100:
             task.complete = True
         db.session.commit()
+        current_app.logger.info('Progress for Redis job_id {0} updated to {1}'.format(job.get_id(), progress))
+
 
 # dummy function to export all companions a user has. Not useful in itself, but code will be!
 # eventually switch this to export chat history
-def export_companions(user_id):
+def export_companions(user_id, max_runtime=120):
+    app.logger.info('Exporting companions for user_id {0}'.format(user_id))
+    current_app.logger.info('Exporting companions for user_id {0}'.format(user_id))
+    start_time = datetime.now()
     try:
         user = db.session.get(User, user_id)
         _set_task_progress(0)
+        current_app.logger.info('Setting export_companion progress to 0')
         data = []
         i = 0
         companion_list = db.session.scalar(sa.select(sa.func.count()).select_from(
             user.companions.select().subquery()))
+        current_app.logger.info('Companion list pulled successfully')
         for comp in db.session.scalars(user.companions.select().order_by(
                 Companion.created_at_ts.asc())):
             data.append({'name': comp.companion_name,
@@ -52,7 +50,9 @@ def export_companions(user_id):
             time.sleep(5)
             i += 1
             _set_task_progress(100 * i // companion_list)
-
+        current_app.logger.info('Companion list successfully generated in list form to send email')
+        current_app.logger.info('Now ensuring email params are set correctly...')
+        current_app.logger.info('Sender: {0} Recipient: {1}...should be enough'.format(app.config['ADMINS'][0], [user.email]))
         send_email(
             '[AICompanion] Your created companions:',
             sender=app.config['ADMINS'][0], recipients=[user.email],
@@ -61,8 +61,15 @@ def export_companions(user_id):
             attachments=[('companions.json', 'application/json',
                           json.dumps({'companions': data}, indent=4))],
             sync=True)
+        runtime = timedelta(seconds=datetime.now() - start_time)
+        current_app.logger.info('Runtime for this is {0}'.format(runtime))
+        if (runtime > max_runtime):
+            raise MaxRuntimeException:
+                _set_task_progress(100)
+                current_app.logger.error('Runtime exceeds maximum runtime of {0} seconds, cancelling job and exiting.'.format(max_runtime), exc_info=sys.exc_info())
     except Exception:
         _set_task_progress(100)
-        app.logger.error('Unhandled exception', exc_info=sys.exc_info())
+        current_app.logger.error('Unhandled exception', exc_info=sys.exc_info())
     finally:
+        current_app.logger.info('Export companion function successfully completed for user {0}'.format(user_id))
         _set_task_progress(100)
