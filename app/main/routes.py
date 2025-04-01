@@ -6,7 +6,7 @@ from flask_babel import _, get_locale
 import sqlalchemy as sa
 from langdetect import detect, LangDetectException
 from app import db
-from app.main.forms import EditProfileForm, EmptyForm, CreateCompanionForm
+from app.main.forms import EditProfileForm, EmptyForm, CreateCompanionForm, SearchForm
 from app.models import User, Companion, Message
 #we havent built this one yet (no free translate API sadge)
 #from app.translate import translate
@@ -17,6 +17,7 @@ def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.now(timezone.utc)
         db.session.commit()
+        g.search_form = SearchForm()
     g.locale = str(get_locale())
 
 
@@ -26,10 +27,13 @@ def before_request():
 def index():
     form = CreateCompanionForm()
     if form.validate_on_submit():
-        try:
-            language = detect(form.message.data)
-        except LangDetectException:
-            language = ''
+        # This code technically works, but there's nothing for it to search for.
+        # It searches for message in the form, but the CreateCompanionForm doesn't have a field called "message" so it errors out
+        # This isn't necessarily a "bug", more so that I just haven't built the features/structure that make it work. But it should!
+        #try:
+        #    language = detect(form.message.data)
+        #except LangDetectException:
+        #    language = ''
         companion = Companion(gender=form.gender.data, realism=form.realism.data, companion_name=form.companion_name.data, creator=current_user, language=language)
         db.session.add(companion)
         db.session.commit()
@@ -60,3 +64,27 @@ def edit_profile():
         form.about_me.data = current_user.about_me
     return render_template('edit_profile.html', title=_('Edit Profile'),
                            form=form)
+
+#currently not implemented!
+@bp.route('/translate', methods=['POST'])
+@login_required
+def translate_text():
+    data = request.get_json()
+    return {'text': translate(data['text'],
+                              data['source_language'],
+                              data['dest_language'])}
+
+@bp.route('/search')
+@login_required
+def search():
+    if not g.search_form.validate():
+        return redirect(url_for('main.index'))
+    page = request.args.get('page', 1, type=int)
+    posts, total = Message.search(g.search_form.q.data, page,
+                               current_app.config['ITEMS_PER_PAGE'])
+    next_url = url_for('main.search', q=g.search_form.q.data, page=page + 1) \
+        if total > page * current_app.config['ITEMS_PER_PAGE'] else None
+    prev_url = url_for('main.search', q=g.search_form.q.data, page=page - 1) \
+        if page > 1 else None
+    return render_template('search.html', title=_('Search'), posts=posts,
+                           next_url=next_url, prev_url=prev_url)
