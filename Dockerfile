@@ -10,6 +10,8 @@ COPY ai_companion.py config.py boot.sh ./
 RUN chmod a+x boot.sh
 
 ENV FLASK_APP=ai_companion.py
+# A temporary DEBUG variable to allow logging without any significant app changes. Will remove and adjust this later.
+ENV FLASK_DEBUG=1
 # We haven't set up translation services yet
 # RUN flask translate compile
 
