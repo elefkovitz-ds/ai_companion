@@ -17,7 +17,6 @@ app.app_context().push()
 
 def _set_task_progress(progress):
     app.logger.info('Setting task progress...')
-    app.logger.info('Setting task progress...')
     job = get_current_job()
     if job:
         job.meta['progress'] = progress
